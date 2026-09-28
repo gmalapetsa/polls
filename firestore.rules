@@ -1,0 +1,41 @@
+rules_version = '2';
+// Κανόνες ασφαλείας για τις ζωντανές ψηφοφορίες.
+// ΑΛΛΑΞΤΕ το email παρακάτω αν ο διαχειριστής είναι άλλος λογαριασμός Google.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == "gmalapetsa@gmail.com"
+        && request.auth.token.email_verified == true;
+    }
+
+    // Κατάσταση κάθε ερώτησης (ανοιχτή/κλειστή, γύρος) — μόνο η διαχειρίστρια γράφει
+    match /state/{pollId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Ψήφοι — ανώνυμοι· επιτρέπεται μόνο δημιουργία, μία ανά συσκευή/ερώτηση/γύρο
+    match /votes/{voteId} {
+      allow read: if true;
+      allow update, delete: if isAdmin();
+      allow create: if validVote(request.resource.data, voteId);
+    }
+
+    function validVote(d, voteId) {
+      let st = get(/databases/$(database)/documents/state/$(d.poll));
+      return d.keys().hasOnly(['poll', 'round', 'ts', 'a', 't0', 't1', 't2'])
+        && d.poll is string && d.poll.matches('^[A-Za-z0-9]{1,30}$')
+        && d.round is int
+        && d.ts == request.time
+        && voteId.matches('^' + d.poll + '_' + string(d.round) + '_[a-z0-9]{12,40}$')
+        && st.data.open == true
+        && st.data.round == d.round
+        && (!('a' in d) || (d.a is int && d.a >= 0 && d.a < 12) || (d.a is list && d.a.size() <= 12))
+        && (!('t0' in d) || (d.t0 is string && d.t0.size() <= 280))
+        && (!('t1' in d) || (d.t1 is string && d.t1.size() <= 280))
+        && (!('t2' in d) || (d.t2 is string && d.t2.size() <= 280));
+    }
+  }
+}

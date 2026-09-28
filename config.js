@@ -3,7 +3,7 @@
 //  (Firebase console → Project settings → Your apps → Web app → Config)
 // =====================================================================
 window.FIREBASE_CONFIG = {
-  apiKey: "AIzaSyD1np8j6PF0304J6UryDjWyiybSawJRthM",
+  apiKey: "AIzaSyD1np8j6PFO3O4J6UryDjWyiybSawJRthM",
   authDomain: "polls-upatras.firebaseapp.com",
   projectId: "polls-upatras",
   storageBucket: "polls-upatras.firebasestorage.app",
